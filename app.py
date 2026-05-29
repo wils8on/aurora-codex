@@ -1,5 +1,15 @@
 import streamlit as st
 
+st.markdown("""
+<style>
+
+section[data-testid="stSidebar"] {
+    background-color: #0d1117;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 # Configuração da página
 st.set_page_config(
     page_title="Aurora Codex",

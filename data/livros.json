@@ -29,7 +29,32 @@
         "status": "Rascunho",
         "descricao": "O mundo não acabou com explosões. Acabou em silêncio. Em questão de semanas, cidades inteiras foram abandonadas, vozes desapareceram e a humanidade… simplesmente deixou de estar lá. Não há corpos. Não há respostas. Apenas vestígios de uma vida interrompida no meio do caminho. Os poucos que restaram ainda tentam entender o que aconteceu — e, principalmente, por quê. Entre ruínas intactas e estradas vazias, sinais começam a surgir. Mensagens. Nomes. Frequências que cruzam o silêncio como se alguém, em algum lugar, ainda estivesse procurando… ou sendo procurado. Mas nem tudo que sobreviveu quer reconstruir. E, em um mundo onde o vazio deveria ser o maior medo, alguns descobrem que o verdadeiro perigo pode estar justamente naquilo que ainda respira. Depois do fim, o silêncio não é ausência. É aviso.",
         "capa": "assets/capas/capa_Depois do Fim_Os Herdeiros do Silencio.png",
-        "banner": "assets/banners/depois_banner.png",
-        "capitulos": []
+        "banner": "assets/banners/depois_banner.jpg",
+        "capitulos": [
+            {
+                "numero": 1,
+                "titulo": "Teste 0001",
+                "status": "Rascunho",
+                "conteudo": "teste teste"
+            },
+            {
+                "numero": 2,
+                "titulo": "Teste 0001",
+                "status": "Rascunho",
+                "conteudo": "teste teste"
+            },
+            {
+                "numero": 3,
+                "titulo": "Teste 0001",
+                "status": "Rascunho",
+                "conteudo": "teste teste"
+            },
+            {
+                "numero": 4,
+                "titulo": "Teste 0001",
+                "status": "Rascunho",
+                "conteudo": "teste teste"
+            }
+        ]
     }
 ]

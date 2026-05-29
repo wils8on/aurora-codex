@@ -1,6 +1,11 @@
 import streamlit as st
 import json
 
+from auth import verificar_login
+
+if not verificar_login():
+    st.stop()
+
 st.title("✍️ Painel do Autor")
 
 CAMINHO_LIVROS = "data/livros.json"
@@ -15,10 +20,49 @@ def salvar_livros(livros):
 
 livros = carregar_livros()
 
-aba_livro, aba_capitulo = st.tabs([
+aba_dashboard, aba_livro, aba_capitulo = st.tabs([
+    "📊 Dashboard",
     "📘 Cadastrar Livro",
     "📄 Cadastrar Capítulo"
 ])
+
+with aba_dashboard:
+    st.subheader("Visão geral do Aurora Codex")
+
+    total_livros = len(livros)
+
+    total_capitulos = sum(
+        len(livro["capitulos"]) for livro in livros
+    )
+
+    total_favoritos = len(
+        st.session_state.get("favoritos", [])
+    )
+
+    capitulos_publicados = sum(
+        1
+        for livro in livros
+        for capitulo in livro["capitulos"]
+        if capitulo["status"] == "Publicado"
+    )
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    col1.metric("Livros", total_livros)
+    col2.metric("Capítulos", total_capitulos)
+    col3.metric("Publicados", capitulos_publicados)
+    col4.metric("Favoritos", total_favoritos)
+
+    st.divider()
+
+    st.subheader("Obras cadastradas")
+
+    for livro in livros:
+        with st.container(border=True):
+            st.write(f"📘 **{livro['titulo']}**")
+            st.caption(
+                f"Status: {livro['status']} | Capítulos: {len(livro['capitulos'])}"
+            )
 
 with aba_livro:
     st.subheader("Novo livro")
@@ -71,6 +115,15 @@ with aba_capitulo:
                 format_func=lambda livro: livro["titulo"]
             )
 
+            numero_sugerido = len(livro_escolhido["capitulos"]) + 1
+
+            numero_capitulo = st.number_input(
+                "Número do capítulo",
+                min_value=1,
+                value=numero_sugerido,
+                step=1
+            )
+
             titulo_capitulo = st.text_input("Título do capítulo")
 
             status_capitulo = st.selectbox(
@@ -80,7 +133,7 @@ with aba_capitulo:
 
             conteudo_capitulo = st.text_area(
                 "Conteúdo do capítulo",
-                height=300
+                height=400
             )
 
             quantidade_palavras = len(conteudo_capitulo.split())
@@ -91,10 +144,8 @@ with aba_capitulo:
                 if not titulo_capitulo or not conteudo_capitulo:
                     st.warning("Preencha o título e o conteúdo do capítulo.")
                 else:
-                    novo_numero = len(livro_escolhido["capitulos"]) + 1
-
                     novo_capitulo = {
-                        "numero": novo_numero,
+                        "numero": int(numero_capitulo),
                         "titulo": titulo_capitulo,
                         "status": status_capitulo,
                         "conteudo": conteudo_capitulo
@@ -104,6 +155,12 @@ with aba_capitulo:
                         if livro["id"] == livro_escolhido["id"]:
                             livro["capitulos"].append(novo_capitulo)
 
+                            livro["capitulos"] = sorted(
+                                livro["capitulos"],
+                                key=lambda capitulo: capitulo["numero"]
+                            )
+
                     salvar_livros(livros)
 
                     st.success("Capítulo salvo com sucesso.")
+                    st.rerun()
