@@ -1,0 +1,44 @@
+[
+    {
+        "data_hora": "29/05/2026 15:31:12",
+        "acao": "Edição de capítulo",
+        "livro": "Depois do Fim: Os Herdeiros do Silêncio!",
+        "capitulo": "Capítulo 1 - TESTE 0001",
+        "detalhes": "Conteúdo do capítulo atualizado"
+    },
+    {
+        "data_hora": "29/05/2026 15:30:33",
+        "acao": "Cadastro de capítulo",
+        "livro": "Depois do Fim: Os Herdeiros do Silêncio!",
+        "capitulo": "Capítulo 1 - TESTE 0001",
+        "detalhes": "Capítulo cadastrado com status: Rascunho."
+    },
+    {
+        "data_hora": "29/05/2026 15:29:08",
+        "acao": "Exclusão de capítulo",
+        "livro": "Depois do Fim: Os Herdeiros do Silêncio!",
+        "capitulo": "Capítulo 1 - Teste 0001",
+        "detalhes": "Capítulo removido do livro."
+    },
+    {
+        "data_hora": "29/05/2026 15:13:41",
+        "acao": "Exclusão de capítulo",
+        "livro": "Depois do Fim: Os Herdeiros do Silêncio!",
+        "capitulo": "Capítulo 2 - Teste 0001",
+        "detalhes": "Capítulo removido do livro."
+    },
+    {
+        "data_hora": "29/05/2026 15:05:38",
+        "acao": "Edição de capítulo",
+        "livro": "Laços Invisíveis",
+        "capitulo": "Capítulo 1 - Um Horizonte ao Longe",
+        "detalhes": "Conteúdo do capítulo atualizado"
+    },
+    {
+        "data_hora": "29/05/2026 15:05:05",
+        "acao": "Exclusão de capítulo",
+        "livro": "Depois do Fim: Os Herdeiros do Silêncio!",
+        "capitulo": "Capítulo 3 - Teste 0001",
+        "detalhes": "Capítulo removido do livro."
+    }
+]

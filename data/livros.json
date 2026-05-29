@@ -12,7 +12,7 @@
                 "numero": 1,
                 "titulo": "Um Horizonte ao Longe",
                 "status": "Publicado",
-                "conteudo": "A alvorada se erguia em Lagos..."
+                "conteudo": "A alvorada se erguia em Lagos com um laranja ardente..."
             },
             {
                 "numero": 2,
@@ -33,27 +33,9 @@
         "capitulos": [
             {
                 "numero": 1,
-                "titulo": "Teste 0001",
+                "titulo": "TESTE 0001",
                 "status": "Rascunho",
-                "conteudo": "teste teste"
-            },
-            {
-                "numero": 2,
-                "titulo": "Teste 0001",
-                "status": "Rascunho",
-                "conteudo": "teste teste"
-            },
-            {
-                "numero": 3,
-                "titulo": "Teste 0001",
-                "status": "Rascunho",
-                "conteudo": "teste teste"
-            },
-            {
-                "numero": 4,
-                "titulo": "Teste 0001",
-                "status": "Rascunho",
-                "conteudo": "teste teste"
+                "conteudo": "TESTE 0001-02"
             }
         ]
     }

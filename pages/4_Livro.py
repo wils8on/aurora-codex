@@ -74,8 +74,15 @@ else:
 
             total_capitulos = len(livro["capitulos"])
 
-            ultimo_capitulo = st.session_state.get(
-                "ultimo_capitulo_lido",
+            if "historico_leitura" not in st.session_state:
+                st.session_state["historico_leitura"] = {}
+
+            historico_leitura = st.session_state["historico_leitura"]
+
+            livro_id_str = str(livro_id)
+
+            ultimo_capitulo = historico_leitura.get(
+                livro_id_str,
                 0
             )
 
@@ -106,7 +113,7 @@ else:
 
             if total_capitulos > 0:
                 if ultimo_capitulo:
-                    st.info(f"Último capítulo lido: {ultimo_capitulo}")
+                    st.info(f"Último capítulo concluído: {ultimo_capitulo}")
 
                     if st.button("Continuar leitura"):
                         st.session_state["capitulo_index"] = ultimo_capitulo - 1

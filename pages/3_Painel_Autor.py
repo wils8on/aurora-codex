@@ -1,3 +1,4 @@
+from datetime import datetime
 import streamlit as st
 import json
 
@@ -9,24 +10,79 @@ if not verificar_login():
 st.title("✍️ Painel do Autor")
 
 CAMINHO_LIVROS = "data/livros.json"
+CAMINHO_HISTORICO = "data/historico.json"
+
 
 def carregar_livros():
     with open(CAMINHO_LIVROS, "r", encoding="utf-8") as file:
         return json.load(file)
 
+
 def salvar_livros(livros):
     with open(CAMINHO_LIVROS, "w", encoding="utf-8") as file:
         json.dump(livros, file, ensure_ascii=False, indent=4)
 
+
+def carregar_historico():
+    try:
+        with open(CAMINHO_HISTORICO, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
+
+
+def salvar_historico(historico):
+    with open(CAMINHO_HISTORICO, "w", encoding="utf-8") as file:
+        json.dump(historico, file, ensure_ascii=False, indent=4)
+
+
+def registrar_historico(acao, livro, capitulo, detalhes):
+    historico = carregar_historico()
+
+    novo_registro = {
+        "data_hora": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+        "acao": acao,
+        "livro": livro,
+        "capitulo": capitulo,
+        "detalhes": detalhes
+    }
+
+    historico.insert(0, novo_registro)
+    salvar_historico(historico)
+
+
+def voltar_dashboard(mensagem):
+    st.session_state["mensagem_dashboard"] = mensagem
+    st.session_state["ir_para_dashboard"] = True
+    st.rerun()
+
+
 livros = carregar_livros()
 
-aba_dashboard, aba_livro, aba_capitulo = st.tabs([
-    "📊 Dashboard",
-    "📘 Cadastrar Livro",
-    "📄 Cadastrar Capítulo"
-])
+if st.session_state.get("ir_para_dashboard"):
+    st.session_state["opcao_painel"] = "📊 Dashboard"
+    del st.session_state["ir_para_dashboard"]
 
-with aba_dashboard:
+opcao_painel = st.radio(
+    "Menu do Painel",
+    [
+        "📊 Dashboard",
+        "📘 Cadastrar Livro",
+        "📄 Cadastrar Capítulo",
+        "✏️ Editar Capítulo",
+        "🗑️ Excluir Capítulo",
+        "🕘 Histórico"
+    ],
+    horizontal=True,
+    key="opcao_painel"
+)
+
+
+if opcao_painel == "📊 Dashboard":
+    if "mensagem_dashboard" in st.session_state:
+        st.success(st.session_state["mensagem_dashboard"])
+        del st.session_state["mensagem_dashboard"]
+
     st.subheader("Visão geral do Aurora Codex")
 
     total_livros = len(livros)
@@ -64,7 +120,8 @@ with aba_dashboard:
                 f"Status: {livro['status']} | Capítulos: {len(livro['capitulos'])}"
             )
 
-with aba_livro:
+
+elif opcao_painel == "📘 Cadastrar Livro":
     st.subheader("Novo livro")
 
     with st.container(border=True):
@@ -94,15 +151,26 @@ with aba_livro:
                     "status": status_livro,
                     "descricao": descricao_livro,
                     "capa": "",
+                    "banner": "",
                     "capitulos": []
                 }
 
                 livros.append(novo_livro)
                 salvar_livros(livros)
 
-                st.success("Livro cadastrado com sucesso.")
+                registrar_historico(
+                    "Cadastro de livro",
+                    titulo_livro,
+                    "-",
+                    f"Livro criado com status: {status_livro}."
+                )
 
-with aba_capitulo:
+                voltar_dashboard(
+                    f"Livro '{titulo_livro}' cadastrado com sucesso."
+                )
+
+
+elif opcao_painel == "📄 Cadastrar Capítulo":
     st.subheader("Novo capítulo")
 
     if not livros:
@@ -136,9 +204,7 @@ with aba_capitulo:
                 height=400
             )
 
-            quantidade_palavras = len(conteudo_capitulo.split())
-
-            st.caption(f"Palavras: {quantidade_palavras}")
+            st.caption(f"Palavras: {len(conteudo_capitulo.split())}")
 
             if st.button("Salvar capítulo"):
                 if not titulo_capitulo or not conteudo_capitulo:
@@ -162,5 +228,195 @@ with aba_capitulo:
 
                     salvar_livros(livros)
 
-                    st.success("Capítulo salvo com sucesso.")
-                    st.rerun()
+                    registrar_historico(
+                        "Cadastro de capítulo",
+                        livro_escolhido["titulo"],
+                        f"Capítulo {numero_capitulo} - {titulo_capitulo}",
+                        f"Capítulo cadastrado com status: {status_capitulo}."
+                    )
+
+                    voltar_dashboard(
+                        f"Capítulo '{titulo_capitulo}' cadastrado com sucesso."
+                    )
+
+
+elif opcao_painel == "✏️ Editar Capítulo":
+    st.subheader("Editar capítulo")
+
+    if not livros:
+        st.warning("Nenhum livro cadastrado.")
+    else:
+        livro_edicao = st.selectbox(
+            "Escolha o livro para edição",
+            livros,
+            format_func=lambda livro: livro["titulo"],
+            key="livro_edicao"
+        )
+
+        if not livro_edicao["capitulos"]:
+            st.warning("Este livro ainda não possui capítulos.")
+        else:
+            capitulo_edicao = st.selectbox(
+                "Escolha o capítulo",
+                livro_edicao["capitulos"],
+                format_func=lambda capitulo: f"Capítulo {capitulo['numero']} - {capitulo['titulo']}",
+                key="capitulo_edicao"
+            )
+
+            with st.container(border=True):
+                novo_numero = st.number_input(
+                    "Número do capítulo",
+                    min_value=1,
+                    value=int(capitulo_edicao["numero"]),
+                    step=1
+                )
+
+                novo_titulo = st.text_input(
+                    "Título do capítulo",
+                    value=capitulo_edicao["titulo"]
+                )
+
+                novo_status = st.selectbox(
+                    "Status",
+                    ["Rascunho", "Publicado"],
+                    index=["Rascunho", "Publicado"].index(capitulo_edicao["status"])
+                )
+
+                novo_conteudo = st.text_area(
+                    "Conteúdo",
+                    value=capitulo_edicao["conteudo"],
+                    height=400
+                )
+
+                st.caption(f"Palavras: {len(novo_conteudo.split())}")
+
+                if st.button("Salvar alterações"):
+                    alteracoes = []
+
+                    if int(novo_numero) != int(capitulo_edicao["numero"]):
+                        alteracoes.append(
+                            f"Número alterado de {capitulo_edicao['numero']} para {novo_numero}"
+                        )
+
+                    if novo_titulo != capitulo_edicao["titulo"]:
+                        alteracoes.append(
+                            f"Título alterado de '{capitulo_edicao['titulo']}' para '{novo_titulo}'"
+                        )
+
+                    if novo_status != capitulo_edicao["status"]:
+                        alteracoes.append(
+                            f"Status alterado de '{capitulo_edicao['status']}' para '{novo_status}'"
+                        )
+
+                    if novo_conteudo != capitulo_edicao["conteudo"]:
+                        alteracoes.append("Conteúdo do capítulo atualizado")
+
+                    if not alteracoes:
+                        alteracoes.append("Nenhuma alteração relevante identificada")
+
+                    titulo_original = capitulo_edicao["titulo"]
+                    numero_original = capitulo_edicao["numero"]
+
+                    for livro in livros:
+                        if livro["id"] == livro_edicao["id"]:
+                            for capitulo in livro["capitulos"]:
+                                if capitulo["numero"] == capitulo_edicao["numero"]:
+                                    capitulo["numero"] = int(novo_numero)
+                                    capitulo["titulo"] = novo_titulo
+                                    capitulo["status"] = novo_status
+                                    capitulo["conteudo"] = novo_conteudo
+
+                            livro["capitulos"] = sorted(
+                                livro["capitulos"],
+                                key=lambda capitulo: capitulo["numero"]
+                            )
+
+                    salvar_livros(livros)
+
+                    registrar_historico(
+                        "Edição de capítulo",
+                        livro_edicao["titulo"],
+                        f"Capítulo {numero_original} - {titulo_original}",
+                        " | ".join(alteracoes)
+                    )
+
+                    voltar_dashboard(
+                        f"Capítulo '{novo_titulo}' atualizado com sucesso."
+                    )
+
+
+elif opcao_painel == "🗑️ Excluir Capítulo":
+    st.subheader("Excluir capítulo")
+
+    if not livros:
+        st.warning("Nenhum livro cadastrado.")
+    else:
+        livro_exclusao = st.selectbox(
+            "Escolha o livro",
+            livros,
+            format_func=lambda livro: livro["titulo"],
+            key="livro_exclusao"
+        )
+
+        if not livro_exclusao["capitulos"]:
+            st.warning("Este livro ainda não possui capítulos.")
+        else:
+            capitulo_exclusao = st.selectbox(
+                "Escolha o capítulo para excluir",
+                livro_exclusao["capitulos"],
+                format_func=lambda capitulo: f"Capítulo {capitulo['numero']} - {capitulo['titulo']}",
+                key="capitulo_exclusao"
+            )
+
+            st.error(
+                f"Você está prestes a excluir: Capítulo {capitulo_exclusao['numero']} - {capitulo_exclusao['titulo']}"
+            )
+
+            confirmar = st.checkbox(
+                "Confirmo que desejo excluir este capítulo."
+            )
+
+            if st.button("Excluir capítulo"):
+                if not confirmar:
+                    st.warning("Marque a confirmação antes de excluir.")
+                else:
+                    titulo_excluido = capitulo_exclusao["titulo"]
+                    numero_excluido = capitulo_exclusao["numero"]
+
+                    for livro in livros:
+                        if livro["id"] == livro_exclusao["id"]:
+                            livro["capitulos"] = [
+                                capitulo
+                                for capitulo in livro["capitulos"]
+                                if capitulo["numero"] != capitulo_exclusao["numero"]
+                            ]
+
+                    salvar_livros(livros)
+
+                    registrar_historico(
+                        "Exclusão de capítulo",
+                        livro_exclusao["titulo"],
+                        f"Capítulo {numero_excluido} - {titulo_excluido}",
+                        "Capítulo removido do livro."
+                    )
+
+                    voltar_dashboard(
+                        f"Capítulo '{titulo_excluido}' excluído com sucesso."
+                    )
+
+
+elif opcao_painel == "🕘 Histórico":
+    st.subheader("Histórico de alterações")
+
+    historico = carregar_historico()
+
+    if not historico:
+        st.info("Nenhuma alteração registrada ainda.")
+    else:
+        for item in historico:
+            with st.container(border=True):
+                st.write(f"**{item['acao']}**")
+                st.caption(item["data_hora"])
+                st.write(f"Livro: {item['livro']}")
+                st.write(f"Capítulo: {item['capitulo']}")
+                st.write(item["detalhes"])
