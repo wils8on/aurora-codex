@@ -1,9 +1,63 @@
+from utils import carregar_leitor, salvar_leitor
+
+from datetime import datetime
+from pathlib import Path
 import streamlit as st
 import json
+import math
 
 st.title("📚 Leitura")
 
 CAMINHO_LIVROS = "data/livros.json"
+CAMINHO_LEITURAS = "data/leituras.json"
+PALAVRAS_POR_MINUTO = 200
+
+
+def contar_palavras(texto):
+    return len(texto.split())
+
+
+def calcular_tempo_leitura(texto):
+    total_palavras = contar_palavras(texto)
+
+    if total_palavras == 0:
+        return 0
+
+    return max(
+        1,
+        math.ceil(total_palavras / PALAVRAS_POR_MINUTO)
+    )
+
+
+def carregar_leituras():
+    if not Path(CAMINHO_LEITURAS).exists():
+        with open(CAMINHO_LEITURAS, "w", encoding="utf-8") as file:
+            json.dump([], file, ensure_ascii=False, indent=4)
+
+    with open(CAMINHO_LEITURAS, "r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def salvar_leituras(leituras):
+    with open(CAMINHO_LEITURAS, "w", encoding="utf-8") as file:
+        json.dump(leituras, file, ensure_ascii=False, indent=4)
+
+
+def registrar_leitura(livro, capitulo):
+    leituras = carregar_leituras()
+
+    novo_registro = {
+        "livro_id": livro["id"],
+        "livro": livro["titulo"],
+        "capitulo": capitulo["numero"],
+        "titulo_capitulo": capitulo["titulo"],
+        "data_hora": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    }
+
+    leituras.insert(0, novo_registro)
+
+    salvar_leituras(leituras)
+
 
 with open(CAMINHO_LIVROS, "r", encoding="utf-8") as file:
     livros = json.load(file)
@@ -31,10 +85,9 @@ else:
             st.warning("Este livro ainda não possui capítulos.")
 
         else:
-            if "historico_leitura" not in st.session_state:
-                st.session_state["historico_leitura"] = {}
+            dados_leitor = carregar_leitor()
 
-            historico_leitura = st.session_state["historico_leitura"]
+            historico_leitura = dados_leitor["historico_leitura"]
 
             livro_id_str = str(livro_id)
 
@@ -53,12 +106,19 @@ else:
             indice_atual = capitulos.index(capitulo)
             total_capitulos = len(capitulos)
 
+            conteudo_capitulo = capitulo.get("conteudo", "")
+            total_palavras = contar_palavras(conteudo_capitulo)
+            tempo_leitura = calcular_tempo_leitura(conteudo_capitulo)
+
             st.divider()
 
             col1, col2 = st.columns([4, 1])
 
             with col1:
                 st.subheader(capitulo["titulo"])
+                st.caption(
+                    f"{total_palavras} palavras | {tempo_leitura} min de leitura"
+                )
 
             with col2:
                 st.info(capitulo["status"])
@@ -74,7 +134,7 @@ else:
                     border-radius: 16px;
                     background-color: rgba(255,255,255,0.04);
                 ">
-                    {capitulo["conteudo"]}
+                    {conteudo_capitulo}
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -85,10 +145,17 @@ else:
             if st.button("✅ Marcar como concluído"):
                 historico_leitura[livro_id_str] = capitulo["numero"]
 
-                st.session_state["historico_leitura"] = historico_leitura
+                dados_leitor["historico_leitura"] = historico_leitura
+
+                salvar_leitor(dados_leitor)
+
+                registrar_leitura(
+                    livro,
+                    capitulo
+                )
 
                 st.success(
-                    f"Capítulo {capitulo['numero']} marcado como concluído."
+                    f"Capítulo {capitulo['numero']} marcado como concluído e leitura registrada."
                 )
 
             st.divider()

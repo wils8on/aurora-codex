@@ -1,5 +1,26 @@
 [
     {
+        "data_hora": "29/05/2026 22:32:30",
+        "acao": "Edição de livro",
+        "livro": "TESTE",
+        "capitulo": "-",
+        "detalhes": "Banner atualizado"
+    },
+    {
+        "data_hora": "29/05/2026 21:49:09",
+        "acao": "Cadastro de livro",
+        "livro": "TESTE",
+        "capitulo": "-",
+        "detalhes": "Livro criado com status: Rascunho, categoria: Sci-Fi e capa: assets/capas/teste.png."
+    },
+    {
+        "data_hora": "29/05/2026 19:43:53",
+        "acao": "Edição de livro",
+        "livro": "Laços Invisíveis",
+        "capitulo": "-",
+        "detalhes": "Categoria alterada para 'Romance'"
+    },
+    {
         "data_hora": "29/05/2026 15:31:12",
         "acao": "Edição de capítulo",
         "livro": "Depois do Fim: Os Herdeiros do Silêncio!",

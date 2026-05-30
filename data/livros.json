@@ -20,7 +20,8 @@
                 "status": "Rascunho",
                 "conteudo": "Teste"
             }
-        ]
+        ],
+        "categoria": "Romance"
     },
     {
         "id": 2,
@@ -38,5 +39,16 @@
                 "conteudo": "TESTE 0001-02"
             }
         ]
+    },
+    {
+        "id": 3,
+        "titulo": "TESTE",
+        "autor": "Ison W. Lone",
+        "status": "Rascunho",
+        "categoria": "Sci-Fi",
+        "descricao": "TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE ",
+        "capa": "assets/capas/teste.png",
+        "banner": "assets/banners/teste.png",
+        "capitulos": []
     }
 ]

@@ -1,3 +1,5 @@
+from utils import carregar_leitor, salvar_leitor
+
 import streamlit as st
 import json
 from pathlib import Path
@@ -9,8 +11,64 @@ CAMINHO_LIVROS = "data/livros.json"
 with open(CAMINHO_LIVROS, "r", encoding="utf-8") as file:
     livros = json.load(file)
 
-historico_leitura = st.session_state.get("historico_leitura", {})
-favoritos = st.session_state.get("favoritos", [])
+dados_leitor = carregar_leitor()
+
+historico_leitura = dados_leitor["historico_leitura"]
+favoritos = dados_leitor["favoritos"]
+
+
+# =========================
+# 🔍 Busca
+# =========================
+
+busca = st.text_input(
+    "🔍 Pesquisar livros",
+    placeholder="Título, autor ou descrição..."
+)
+
+if busca:
+    termo_busca = busca.lower()
+
+    livros_filtrados = []
+
+    for livro in livros:
+        texto_busca = (
+            f"{livro['titulo']} "
+            f"{livro['autor']} "
+            f"{livro['descricao']} "
+            f"{livro.get('categoria', 'Sem categoria')}"
+        ).lower()
+
+        if termo_busca in texto_busca:
+            livros_filtrados.append(livro)
+else:
+    livros_filtrados = livros
+
+
+# =========================
+# 🏷️ Filtro por Categoria
+# =========================
+
+categorias_disponiveis = sorted(
+    list(
+        set(
+            livro.get("categoria", "Sem categoria")
+            for livro in livros_filtrados
+        )
+    )
+)
+
+categoria_selecionada = st.selectbox(
+    "🏷️ Filtrar por categoria",
+    ["Todas"] + categorias_disponiveis
+)
+
+if categoria_selecionada != "Todas":
+    livros_filtrados = [
+        livro
+        for livro in livros_filtrados
+        if livro.get("categoria", "Sem categoria") == categoria_selecionada
+    ]
 
 
 # =========================
@@ -52,25 +110,10 @@ st.subheader("📊 Minha Leitura")
 
 col1, col2, col3, col4 = st.columns(4)
 
-col1.metric(
-    "Livros iniciados",
-    livros_iniciados
-)
-
-col2.metric(
-    "Capítulos concluídos",
-    capitulos_concluidos
-)
-
-col3.metric(
-    "Livros concluídos",
-    livros_concluidos
-)
-
-col4.metric(
-    "Progresso geral",
-    f"{progresso_geral}%"
-)
+col1.metric("Livros iniciados", livros_iniciados)
+col2.metric("Capítulos concluídos", capitulos_concluidos)
+col3.metric("Livros concluídos", livros_concluidos)
+col4.metric("Progresso geral", f"{progresso_geral}%")
 
 st.divider()
 
@@ -81,7 +124,7 @@ st.divider()
 
 st.subheader("📚 Continuar lendo")
 
-livros_em_andamento = []
+leituras_iniciadas = []
 
 for livro in livros:
     livro_id_str = str(livro["id"])
@@ -90,15 +133,15 @@ for livro in livros:
         ultimo_capitulo = historico_leitura[livro_id_str]
 
         if ultimo_capitulo > 0:
-            livros_em_andamento.append(
+            leituras_iniciadas.append(
                 {
                     "livro": livro,
                     "ultimo_capitulo": ultimo_capitulo
                 }
             )
 
-if livros_em_andamento:
-    for item in livros_em_andamento:
+if leituras_iniciadas:
+    for item in leituras_iniciadas:
         livro = item["livro"]
         ultimo_capitulo = item["ultimo_capitulo"]
         total_capitulos = len(livro["capitulos"])
@@ -134,7 +177,6 @@ if livros_em_andamento:
 
                 else:
                     st.caption("Nenhum capítulo disponível ainda.")
-                    progresso = 0
 
                 if st.button(
                     "Continuar",
@@ -149,6 +191,110 @@ if livros_em_andamento:
 
 else:
     st.info("Nenhuma leitura iniciada ainda.")
+
+st.divider()
+
+
+# =========================
+# 📖 Em andamento
+# =========================
+
+st.subheader("📖 Em andamento")
+
+livros_em_andamento = []
+
+for livro in livros:
+    livro_id_str = str(livro["id"])
+
+    if livro_id_str in historico_leitura:
+        ultimo_capitulo = historico_leitura[livro_id_str]
+        total_capitulos = len(livro["capitulos"])
+
+        if (
+            total_capitulos > 0
+            and ultimo_capitulo > 0
+            and ultimo_capitulo < total_capitulos
+        ):
+            livros_em_andamento.append(livro)
+
+if livros_em_andamento:
+    for livro in livros_em_andamento:
+        total_capitulos = len(livro["capitulos"])
+        ultimo_capitulo = historico_leitura[str(livro["id"])]
+        progresso = min(ultimo_capitulo / total_capitulos, 1)
+        percentual = int(progresso * 100)
+
+        with st.container(border=True):
+            col1, col2 = st.columns([1, 3])
+
+            with col1:
+                capa = livro.get("capa", "")
+
+                if capa and Path(capa).exists():
+                    st.image(capa, width="stretch")
+
+            with col2:
+                st.write(f"📖 **{livro['titulo']}**")
+                st.caption(
+                    f"Capítulo {ultimo_capitulo} de {total_capitulos} | {percentual}% concluído"
+                )
+                st.progress(progresso)
+
+                if st.button(
+                    "Abrir",
+                    key=f"andamento_{livro['id']}"
+                ):
+                    st.session_state["livro_selecionado"] = livro["id"]
+                    st.switch_page("pages/4_Livro.py")
+
+else:
+    st.info("Nenhum livro em andamento.")
+
+st.divider()
+
+
+# =========================
+# ✅ Concluídos
+# =========================
+
+st.subheader("✅ Concluídos")
+
+livros_concluidos_lista = []
+
+for livro in livros:
+    livro_id_str = str(livro["id"])
+
+    if livro_id_str in historico_leitura:
+        ultimo_capitulo = historico_leitura[livro_id_str]
+        total_capitulos = len(livro["capitulos"])
+
+        if total_capitulos > 0 and ultimo_capitulo >= total_capitulos:
+            livros_concluidos_lista.append(livro)
+
+if livros_concluidos_lista:
+    for livro in livros_concluidos_lista:
+        with st.container(border=True):
+            col1, col2 = st.columns([1, 3])
+
+            with col1:
+                capa = livro.get("capa", "")
+
+                if capa and Path(capa).exists():
+                    st.image(capa, width="stretch")
+
+            with col2:
+                st.write(f"✅ **{livro['titulo']}**")
+                st.caption("Leitura concluída")
+
+                if st.button(
+                    "Reabrir",
+                    key=f"concluido_{livro['id']}"
+                ):
+                    st.session_state["livro_selecionado"] = livro["id"]
+                    st.switch_page("pages/4_Livro.py")
+
+else:
+    st.info("Nenhum livro concluído ainda.")
 
 st.divider()
 
@@ -174,7 +320,7 @@ if favoritos:
                 with col2:
                     st.write(f"⭐ **{livro['titulo']}**")
                     st.caption(
-                        f"Autor: {livro['autor']} | Status: {livro['status']}"
+                        f"Autor: {livro['autor']} | Status: {livro['status']} | Categoria: {livro.get('categoria', 'Sem categoria')}"
                     )
 
                     if st.button(
@@ -193,7 +339,15 @@ if favoritos:
 
 st.subheader("📚 Todos os livros")
 
-for livro in livros:
+if busca or categoria_selecionada != "Todas":
+    st.info(
+        f"{len(livros_filtrados)} resultado(s) encontrado(s)."
+    )
+
+if not livros_filtrados:
+    st.warning("Nenhum livro encontrado para os filtros aplicados.")
+
+for livro in livros_filtrados:
     with st.container(border=True):
         col1, col2 = st.columns([1, 3])
 
@@ -207,7 +361,7 @@ for livro in livros:
             st.subheader(livro["titulo"])
 
             st.caption(
-                f"Autor: {livro['autor']} | Status: {livro['status']}"
+                f"Autor: {livro['autor']} | Status: {livro['status']} | Categoria: {livro.get('categoria', 'Sem categoria')}"
             )
 
             st.write(livro["descricao"])

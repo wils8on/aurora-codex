@@ -1,10 +1,36 @@
+from utils import carregar_leitor, salvar_leitor
+
 import streamlit as st
 import json
+import math
 from pathlib import Path
 
 st.title("🌌 Livro")
 
 CAMINHO_LIVROS = "data/livros.json"
+PALAVRAS_POR_MINUTO = 200
+
+
+def contar_palavras(texto):
+    return len(texto.split())
+
+
+def formatar_numero(numero):
+    return f"{numero:,}".replace(",", ".")
+
+
+def formatar_tempo(minutos_totais):
+    if minutos_totais <= 0:
+        return "0min"
+
+    horas = minutos_totais // 60
+    minutos = minutos_totais % 60
+
+    if horas > 0:
+        return f"{horas}h {minutos:02d}min"
+
+    return f"{minutos}min"
+
 
 with open(CAMINHO_LIVROS, "r", encoding="utf-8") as file:
     livros = json.load(file)
@@ -24,6 +50,11 @@ else:
         st.error("Livro não encontrado.")
 
     else:
+        dados_leitor = carregar_leitor()
+
+        favoritos = dados_leitor["favoritos"]
+        historico_leitura = dados_leitor["historico_leitura"]
+
         banner = livro.get("banner", "")
 
         if banner and Path(banner).exists():
@@ -53,33 +84,49 @@ else:
         with col2:
             st.header(livro["titulo"])
 
-            favoritos = st.session_state.get("favoritos", [])
             favoritado = livro["id"] in favoritos
 
             if favoritado:
                 if st.button("⭐ Favoritado"):
                     favoritos.remove(livro["id"])
-                    st.session_state["favoritos"] = favoritos
+                    dados_leitor["favoritos"] = favoritos
+                    salvar_leitor(dados_leitor)
                     st.rerun()
             else:
                 if st.button("☆ Favoritar"):
                     favoritos.append(livro["id"])
-                    st.session_state["favoritos"] = favoritos
+                    dados_leitor["favoritos"] = favoritos
+                    salvar_leitor(dados_leitor)
                     st.rerun()
 
-            st.caption(f"Autor: {livro['autor']} | Status: {livro['status']}")
+            st.caption(
+                f"Autor: {livro['autor']} | Status: {livro['status']} | Categoria: {livro.get('categoria', 'Sem categoria')}"
+            )
+
             st.write(livro["descricao"])
 
             st.divider()
 
             total_capitulos = len(livro["capitulos"])
-
-            if "historico_leitura" not in st.session_state:
-                st.session_state["historico_leitura"] = {}
-
-            historico_leitura = st.session_state["historico_leitura"]
-
             livro_id_str = str(livro_id)
+
+            total_palavras = sum(
+                contar_palavras(
+                    capitulo.get("conteudo", "")
+                )
+                for capitulo in livro["capitulos"]
+            )
+
+            tempo_total_minutos = math.ceil(
+                total_palavras / PALAVRAS_POR_MINUTO
+            ) if total_palavras > 0 else 0
+
+            if total_capitulos > 0:
+                media_palavras = int(
+                    total_palavras / total_capitulos
+                )
+            else:
+                media_palavras = 0
 
             ultimo_capitulo = historico_leitura.get(
                 livro_id_str,
@@ -94,7 +141,29 @@ else:
             else:
                 progresso = 0
 
-            st.metric("Capítulos", total_capitulos)
+            col_metricas_1, col_metricas_2 = st.columns(2)
+
+            with col_metricas_1:
+                st.metric(
+                    "Capítulos",
+                    total_capitulos
+                )
+
+                st.metric(
+                    "Palavras",
+                    formatar_numero(total_palavras)
+                )
+
+            with col_metricas_2:
+                st.metric(
+                    "Tempo estimado",
+                    formatar_tempo(tempo_total_minutos)
+                )
+
+                st.metric(
+                    "Média por capítulo",
+                    formatar_numero(media_palavras)
+                )
 
             st.markdown("### Progresso da leitura")
 
@@ -132,10 +201,20 @@ else:
 
         if livro["capitulos"]:
             for capitulo in livro["capitulos"]:
+                palavras_capitulo = contar_palavras(
+                    capitulo.get("conteudo", "")
+                )
+
+                tempo_capitulo = math.ceil(
+                    palavras_capitulo / PALAVRAS_POR_MINUTO
+                ) if palavras_capitulo > 0 else 0
+
                 with st.container(border=True):
                     st.write(
                         f"Capítulo {capitulo['numero']} - {capitulo['titulo']}"
                     )
-                    st.caption(f"Status: {capitulo['status']}")
+                    st.caption(
+                        f"Status: {capitulo['status']} | {formatar_numero(palavras_capitulo)} palavras | {formatar_tempo(tempo_capitulo)} de leitura"
+                    )
         else:
             st.info("Nenhum capítulo cadastrado ainda.")
