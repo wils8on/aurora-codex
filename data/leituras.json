@@ -1,1 +1,9 @@
-[]
+[
+    {
+        "livro_id": 1,
+        "livro": "Laços Invisíveis",
+        "capitulo": 1,
+        "titulo_capitulo": "Um Horizonte ao Longe",
+        "data_hora": "30/05/2026 22:43:24"
+    }
+]
